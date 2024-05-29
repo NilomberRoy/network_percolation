@@ -85,25 +85,9 @@ void network_build()
         	 
         	 
         	 swap(neighbours[j], neighbours[random_node]);
-        	 //uniform_real_distribution<long double> dist(j+1, neighbours.size()-1);
-        	 //int f= dist(gen);
-        	 //swap(neighbours[j+1],neighbours[f]);
-        /*for (int j = 0; j < neighbours.size(); j++) {
-        	uniform_real_distribution<long double> random(0,1);
-        double random_number = random(gen);
-        
-        	if (random_number <= p ){
-			
-            Nodes_vect[i].push_back(neighbours[j]);
-            Nodes_vect[neighbours[j]].push_back(i);
-			NodeA.push_back(i);
-			NodeB.push_back(neighbours[j]);*/
-        
+        	 
 		}
-	/*	Nodes_vect[i].push_back(selected_node);
-        Nodes_vect[selected_node].push_back(i);
-        NodeA.push_back(i);
-		NodeB.push_back(selected_node);*/
+	vector<int>().swap(neighbours);
     }
 }
 
