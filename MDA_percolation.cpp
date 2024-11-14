@@ -311,7 +311,7 @@ void percolation()
             }
             
             else {
-			//new bond is connecting within the same cluster. roots are same. only entropy will change here.
+			//new bond is connecting within the same cluster. roots are same. entropy remains the same.
             tempentropy[a+1]=tempentropy[a];
 			}
         }
