@@ -16,12 +16,14 @@ int ensemble_count=0;
 //double p=0.0;
 int m=0; //number of randomly connected links
 long double X;
+double alpha = 0.0;
 
 vector<int> ptr; 
 vector<int>created_bonds; //rename of each bond
 vector<int>shuffled_bonds; //shuffle of renamed bonds
 
 vector<long double>big; //order parameter
+vector<long int>largest_cluster;
 vector<long double>X2;
 vector<long double>X1;
 vector<long double>X3;
@@ -40,6 +42,8 @@ string largestclus;
 string specific_heat;
 string susceptibility;
 string u;
+string powder;
+string t_Nalpha;
 
 void seed_generator() {
     auto now = system_clock::now();
@@ -103,7 +107,7 @@ void network_build() //mda
         	 NodeB.push_back(neighbours[random_node]);
         	 
         	 
-        	 swap(neighbours[j], neighbours[random_node]);//for not conneting chosen neighbor in next iteration
+        	 swap(neighbours[j], neighbours[random_node]);//for not conneting it in next iteration
         }
         vector<int>().swap(neighbours);
     }
@@ -152,14 +156,18 @@ void update_root_and_entropy(int bond,int father, int child)
 and their inital values for percolation. */
 void percolation_initialization()
 {
-   tot_entropy.resize(N,0.0);
-   big.resize(N,0.0);
-   X1.resize(N,0.0);
-   X2.resize(N,0.0);
-   X3.resize(N,0.0);
-   X4.resize(N,0.0);
-   U.resize(N,0);
+   tot_entropy.resize(N+1,0.0);
+   big.resize(N+1,0.0);
+   X1.resize(N+1,0.0);
+   X2.resize(N+1,0.0);
+   X3.resize(N+1,0.0);
+   X4.resize(N+1,0.0);
+   U.resize(N+1,0.0);
+   largest_cluster.resize(N+1,0);
    big[0]+= (long double)1/N;
+   
+   
+   largest_cluster[0]= 1;
 
    tot_entropy[0] += (long double)logl(N);
 
@@ -192,7 +200,7 @@ vector<int>().swap(created_bonds);//clearing created bonds, cause we don't need 
 //cout<<"Ensemble initialization ok"<<endl;
 }
 /*We're selecting one bond from M number of bonds. 
-To select a bond, We're using product rule of Aclioptas Process. */
+To select a bond, We're using product rule of Achlioptas Process. */
 int bondselection(int A) {
     vector<pair<long double, int>> product_and_index;
 
@@ -226,6 +234,9 @@ int bondselection(int A) {
         int f = dist(gen);
         swap(shuffled_bonds[A + k], shuffled_bonds[f]);
     }
+
+    
+    //shuffle(shuffled_bonds.begin() + A , shuffled_bonds.end(), gen);
      product_and_index.clear();
      return original_selection;
 }
@@ -239,6 +250,11 @@ void percolation()
     ofstream file3(specific_heat);
     ofstream file4(susceptibility);
     ofstream file5(u);
+    ofstream file6(powder);
+    ofstream file7(t_Nalpha);
+
+    int explosivity_time_count = 0; 
+    int time_needed_to_reach_Nalpha = 0;
     
     for (int ensemble = 0; ensemble < ensemble_count; ensemble++)
     {   
@@ -249,6 +265,7 @@ void percolation()
 	    percolation_initialization();
 	    
         seed_initialization();
+        //cout<<"ok1.5"<<endl;
         network_build();
         //cout<<"ok2"<<endl;
        
@@ -262,7 +279,8 @@ void percolation()
         /*This ptr vector is inputing initial root -1 for every node. 
         The root will change when nodes will form cluster of size greater than
         their previous size.*/
-         
+
+        double N_alpha = pow(N, alpha); 
         int current_big = 1;//initial largest cluster size
         //cout<<"ok5"<<endl;
         for (int a = 0; a < N; a++)
@@ -270,7 +288,7 @@ void percolation()
             int x, y, a1;
 
             if (a <= NodeA.size() - M)
-             {
+            {
                 a1 = bondselection(a);//selected bond 
             }
             else
@@ -311,14 +329,14 @@ void percolation()
             }
             
             else {
-			//new bond is connecting within the same cluster. roots are same. entropy remains the same.
+			//new bond is connecting within the same cluster. roots are same. entropy will not change here.
             tempentropy[a+1]=tempentropy[a];
 			}
-        }
+           }
         
-        if(tempentropy[a+1]<0)
-		{tempentropy[a+1]=0;} //not needed actually
-          // cout<<"ok6"<<endl;
+            if(tempentropy[a+1]<0)
+		    {tempentropy[a+1]=0;} //not needed actually
+             //cout<<"ok6"<<endl;
             
            
              if (-ptr[findroot(x)] > current_big)//comparing current largest cluster with the new cluster after adding bond.
@@ -330,32 +348,48 @@ void percolation()
 			//}
             big[a+1] +=(long double)current_big/N;
             X =(long double) current_big/N;
+            X1[0] += (long double)pow(1/N, 4);
+            X2[0] += (long double)pow(1/N, 2);
             X2[a+1] +=(long double)pow(X,2);
             X1[a+1] +=(long double)pow(X,4);
             
-			 
+			 //cout<<"ok7"<<endl;
             tot_entropy[a+1]+=(long double)tempentropy[a+1];//total entropy is being merged
-        
+
+            largest_cluster[a+1] = current_big;
+            
+		    if(largest_cluster[a+1] <= (int)N_alpha){
+                time_needed_to_reach_Nalpha+=1;
+            }	 
+            
+
+            if(largest_cluster[a+1] > (int)N_alpha && largest_cluster[a+1] < (int)(N/2)) //powder keg growth-time count 
+            {
+                explosivity_time_count+= 1;
+                
+            }    
+        //cout<<"ok8"<<endl;
         }
      // Reset the network and bond configurations for each ensemble
         
         //vector< vector<int> >().swap(Nodes_Neigh);
         
-    
+        vector<long int>().swap(largest_cluster);
+
         vector<int>().swap(ptr);
       
         vector<int>().swap(shuffled_bonds);
         
         vector<long double>().swap(tempentropy);
         
-        cout<<"ensemble no."<<ensemble<<" "<<"is done"<<endl;
-	 }
+        //cout<<"ensemble no."<< ensemble<<" "<<"is done"<<endl;
+	}
 	 
 	 for(int i=0; i<N; i++){
 	 	X3[i] = (long double) X1[i]/ensemble_count;
 	 	X4[i] = (long double) X2[i]/ensemble_count;
 	 	
-	 }
+	    }
    
     
     // Calculate average cluster sizes and print the results
@@ -363,20 +397,24 @@ void percolation()
     {    
          double avg_entropy = (long double)(tot_entropy[i]) / (ensemble_count);
          double avg_cluster_size = (long double)(big[i]) / (ensemble_count) ;
-         //double avg_clus_pow2=(long double)(big[i]*big[i]*big[i]*big[i])/(ensemble_count*ensemble_count);
-         //double avg_clus_pow4= (long double)(big[i]*big[i]*big[i]*big[i])/(ensemble_count);
+
          U[i] = (long double) (1.0 - (X3[i]/(3.0*pow(X4[i],2))));
-         double avg_specific_heat = (long double) (1- i/N)*((tot_entropy[i+1] - tot_entropy[i])*(-N));;
-         double avg_susceptibility = (long double) ((big[i+1] - big[i])* N);
+         double avg_specific_heat = (long double) ((1- i/N)*(tot_entropy[i] - tot_entropy[i+1])*N)/(ensemble_count);;
+         double avg_susceptibility = (long double)((big[i+1] - big[i])*N)/(ensemble_count);
          
-        //file4 <<fixed<<setprecision(10) << (long double)(i) / N << "  " <<setprecision(10) << avg_susceptibility<<endl;
-    	//file3 <<fixed<<setprecision(10) << (long double)(i) / N << "  " <<setprecision(10) << avg_specific_heat<<endl;
-    	//file5 <<fixed<<setprecision(10) << (long double)(i) / N << "  " <<setprecision(10) << U[i]<<endl;
+        file4 <<fixed<<setprecision(10) << (long double)(i) / N << "  " <<setprecision(10) << avg_susceptibility<<endl;
+    	file3 <<fixed<<setprecision(10) << (long double)(i) / N << "  " <<setprecision(10) << avg_specific_heat<<endl;
+    	file5 <<fixed<<setprecision(10) << (long double)(i) / N << "  " <<setprecision(10) << U[i]<<endl;
         file2 <<fixed<<setprecision(10) << (long double)(i) / N << "  " <<setprecision(10) << avg_cluster_size<<endl;
         file1 <<fixed<<setprecision(10) << (long double)(i) / N << "  " <<setprecision(10) << avg_entropy << endl;
     }
-    
-    
+
+    double time_needed_to_reach_Nalpha_avg = (long double) (time_needed_to_reach_Nalpha)/(ensemble_count);///for powder keg
+    double explosivity_time_count_avg = (long double) (explosivity_time_count)/(ensemble_count); //explosivity time count
+    file6 << N << "  " <<setprecision(10) << explosivity_time_count_avg << endl;
+    cout << N << "  " <<setprecision(10) << explosivity_time_count_avg << endl;
+    file7 << N << "  " <<setprecision(10) << time_needed_to_reach_Nalpha_avg << endl;
+    cout << N << "  " <<setprecision(10) << time_needed_to_reach_Nalpha_avg << endl;
    
    vector<long double>().swap(tot_entropy);
    vector<long double>().swap(big);
@@ -393,13 +431,16 @@ int main(int argc, char* argv[]){
     m0=atoi(argv[3]);
     ensemble_count=atoi(argv[4]);
     m=atoi(argv[5]);
-    filenum=atoi(argv[6]);
+    alpha=atof(argv[6]);
+    filenum=atoi(argv[7]);
     
-    largestclus="op_M"+to_string(M)+"_N"+to_string(N)+"_m0"+to_string(m0)+"_en"+to_string(ensemble_count)+"_m"+to_string(m)+"_fnum"+to_string(filenum)+".dat";
-    ent="ent_M"+to_string(M)+"_N"+to_string(N)+"_m0"+to_string(m0)+"_en"+to_string(ensemble_count)+"_m"+to_string(m)+"_fnum"+to_string(filenum)+".dat";
-    //specific_heat="spe_M"+to_string(M)+"_N"+to_string(N)+"_m0"+to_string(m0)+"_en"+to_string(ensemble_count)+"_m"+to_string(m)+"_fnum"+to_string(filenum)+".dat";
-    //susceptibility="sus_M"+to_string(M)+"_N"+to_string(N)+"_m0"+to_string(m0)+"_en"+to_string(ensemble_count)+"_m"+to_string(m)+"_fnum"+to_string(filenum)+".dat";
-    //u="U_M"+to_string(M)+"_N"+to_string(N)+"_m0"+to_string(m0)+"_en"+to_string(ensemble_count)+"_m"+to_string(m)+"_fnum"+to_string(filenum)+".dat";
+    t_Nalpha="t_Nalpha_M"+to_string(M)+"_N"+to_string(N)+"_m0"+to_string(m0)+"_en"+to_string(ensemble_count)+"_m"+to_string(m)+"_alpha"+to_string(alpha)+"_fnum"+to_string(filenum)+".dat";
+    powder="powder_M"+to_string(M)+"_N"+to_string(N)+"_m0"+to_string(m0)+"_en"+to_string(ensemble_count)+"_m"+to_string(m)+"_alpha"+to_string(alpha)+"_fnum"+to_string(filenum)+".dat";
+    largestclus="op_M"+to_string(M)+"_N"+to_string(N)+"_m0"+to_string(m0)+"_en"+to_string(ensemble_count)+"_m"+to_string(m)+"_alpha"+to_string(alpha)+"_fnum"+to_string(filenum)+".dat";
+    ent="ent_M"+to_string(M)+"_N"+to_string(N)+"_m0"+to_string(m0)+"_en"+to_string(ensemble_count)+"_m"+to_string(m)+"_alpha"+to_string(alpha)+"_fnum"+to_string(filenum)+".dat";
+    specific_heat="spe_M"+to_string(M)+"_N"+to_string(N)+"_m0"+to_string(m0)+"_en"+to_string(ensemble_count)+"_m"+to_string(m)+"_alpha"+to_string(alpha)+"_fnum"+to_string(filenum)+".dat";
+    susceptibility="sus_M"+to_string(M)+"_N"+to_string(N)+"_m0"+to_string(m0)+"_en"+to_string(ensemble_count)+"_m"+to_string(m)+"_alpha"+to_string(alpha)+"_fnum"+to_string(filenum)+".dat";
+    u="U_M"+to_string(M)+"_N"+to_string(N)+"_m0"+to_string(m0)+"_en"+to_string(ensemble_count)+"_m"+to_string(m)+"_alpha"+to_string(alpha)+"_fnum"+to_string(filenum)+".dat";
 	percolation();
 	
     return 0;
