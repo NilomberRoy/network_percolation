@@ -399,7 +399,7 @@ void percolation()
          double avg_cluster_size = (long double)(big[i]) / (ensemble_count) ;
 
          U[i] = (long double) (1.0 - (X3[i]/(3.0*pow(X4[i],2))));
-         double avg_specific_heat = (long double) ((1- i/N)*(tot_entropy[i] - tot_entropy[i+1])*N)/(ensemble_count);;
+         double avg_specific_heat = (long double) (((N- i)/N)*(tot_entropy[i] - tot_entropy[i+1])*N)/(ensemble_count);;
          double avg_susceptibility = (long double)((big[i+1] - big[i])*N)/(ensemble_count);
          
         file4 <<fixed<<setprecision(10) << (long double)(i) / N << "  " <<setprecision(10) << avg_susceptibility<<endl;
