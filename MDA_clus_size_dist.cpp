@@ -26,7 +26,7 @@ vector<int> NodeA;
 vector<int> NodeB;
 
 // Cluster size data
-vector<int> cluster_sizes; //vector for counting the each cluster sizes
+vector<int> cluster_sizes; //vector for counting each cluster sizes
 
 // Output file
 string dist_file;
@@ -271,3 +271,4 @@ int main(int argc, char* argv[])
     percolation();
     return 0;
 }
+
