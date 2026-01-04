@@ -1,7 +1,7 @@
 # MDA_percolation
 This program simulates percolation on a Mediation Driven Attachment (MDA) network, where the network is grown by adding new nodes that attach via a mediator node to m randomly selected neighbors, resulting in a heterogeneous topology. After the MDA network is built, a percolation process is performed using the product rule of Achlioptas process—at each step, M bonds are compared and the one minimizing the product of connecting cluster sizes is chosen—tracking the evolution of clusters, entropy, and order parameters to study the percolation transition and critical properties of the MDA network. Simulation results (e.g., largest cluster, entropy, susceptibility) are output for further analysis.
 
-#MDA_clus_size_dist
+# MDA_clus_size_dist
 This code calculates the cluster-size distribution of the MDA network while doing percolation. It accumulates the number of existing clusters and store them. The runtime of adding bonds is \(t\), which is defined by the fraction of bonds we are adding from the total number of bonds \(N\). Here, our interest is to observe cluster-size distribution after adding specified \(t\) fraction of bonds. 
   
 # ER_percolation
